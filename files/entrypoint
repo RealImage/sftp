@@ -23,6 +23,11 @@ else
     startSshd=false
 fi
 
+# Set default user
+if [ ! -f "$userConfPath" ]; then
+    echo "test:test" > "$userConfPath"
+fi
+
 # Backward compatibility with legacy config path
 if [ ! -f "$userConfPath" ] && [ -f "$userConfPathLegacy" ]; then
     mkdir -p "$(dirname $userConfPath)"
