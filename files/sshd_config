@@ -8,6 +8,8 @@ HostKey /etc/ssh/ssh_host_rsa_key
 # See: https://github.com/atmoz/sftp/issues/11
 UseDNS no
 
+Port 2222
+
 # Limited access
 PermitRootLogin no
 X11Forwarding no
