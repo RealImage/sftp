@@ -1,0 +1,55 @@
+name: Release 🚀
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ksrv_image:
+    name: Deploy vsftpd image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install qemu dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.QW_FLEET_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.QW_FLEET_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        uses: redhat-actions/buildah-build@v2
+        id: build_image
+        with:
+          image: proftpd
+          tags: >
+            ${{ github.ref_name }}
+            ${{ github.sha }}
+            latest
+          containerfiles: Containerfile
+          platforms: linux/amd64, linux/arm64
+          oci: true
+
+      - name: Push to Amazon ECR
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          registry: ${{ steps.login-ecr.outputs.registry }}
+          image: ${{ steps.build_image.outputs.image }}
+          tags: ${{ steps.build_image.outputs.tags }}
